@@ -8,6 +8,9 @@ namespace InputKunByAI
         [STAThread]
         static void Main()
         {
+            // Enable legacy encodings like CP932 (Shift_JIS)
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();

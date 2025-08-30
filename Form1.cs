@@ -25,6 +25,10 @@ namespace InputKunByAI
         // Track last focused time textbox (開始 or 終了)
         private TextBox? _lastFocusedTimeTextBox;
 
+        // Overlay cursor during drag
+        private CursorOverlay? _dragOverlay;
+        private System.Windows.Forms.Timer? _dragOverlayTimer;
+
         public Form1()
         {
             InitializeComponent();
@@ -58,6 +62,10 @@ namespace InputKunByAI
 
                 // Allow drop and track focus on each 開始 TextBox
                 HookTimeTextBox(row.StartText);
+
+                // Align text to show left edge when focus is lost (for 作業番号/作業区分)
+                HookLeftAlignOnLeave(row.SmallCombo1);
+                HookLeftAlignOnLeave(row.SmallCombo2);
 
                 _rows.Add(row);
                 flpPanels.Controls.Add(row.Container);
@@ -130,6 +138,25 @@ namespace InputKunByAI
             combo.IntegralHeight = false;
         }
 
+        private static void HookLeftAlignOnLeave(ComboBox combo)
+        {
+            if (combo == null) return;
+            void align()
+            {
+                try
+                {
+                    if (combo.DropDownStyle == ComboBoxStyle.DropDown || combo.DropDownStyle == ComboBoxStyle.Simple)
+                    {
+                        combo.SelectionStart = 0;
+                        combo.SelectionLength = 0;
+                    }
+                }
+                catch { }
+            }
+            combo.Leave += (_, __) => align();
+            combo.DropDownClosed += (_, __) => align();
+        }
+
         private void ApplyHistoryToRow(PanelRow row)
         {
             if (row.BigCombo.SelectedItem is string s)
@@ -142,6 +169,7 @@ namespace InputKunByAI
                     row.SmallCombo3.Text = parts[2];
                 }
             }
+            row.BigCombo.SelectedIndex = -1; // reset selection
         }
 
         private void EnsureDataFiles()
@@ -183,8 +211,64 @@ namespace InputKunByAI
 
         private static string[] SafeReadAllLines(string path)
         {
-            try { return File.ReadAllLines(path, Encoding.UTF8); }
+            try
+            {
+                if (!File.Exists(path)) return Array.Empty<string>();
+                var bytes = File.ReadAllBytes(path);
+                if (bytes.Length == 0) return Array.Empty<string>();
+
+                // BOM: UTF-8
+                if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+                {
+                    var utf8Bom = new UTF8Encoding(true, true);
+                    var text = utf8Bom.GetString(bytes);
+                    return SplitLines(text);
+                }
+
+                // Try strict UTF-8 (no BOM) with round-trip check
+                try
+                {
+                    var utf8Strict = new UTF8Encoding(false, true);
+                    var decoded = utf8Strict.GetString(bytes); // may throw
+                    var re = utf8Strict.GetBytes(decoded);
+                    if (BytesEqual(bytes, re))
+                    {
+                        return SplitLines(decoded);
+                    }
+                }
+                catch
+                {
+                    // ignore and fallback to CP932
+                }
+
+                // Try CP932 (Shift_JIS). Requires CodePages provider (registered in Program.Main).
+                try
+                {
+                    var sjis = Encoding.GetEncoding(932, new EncoderExceptionFallback(), new DecoderExceptionFallback());
+                    var text = sjis.GetString(bytes);
+                    return SplitLines(text);
+                }
+                catch
+                {
+                    // Last resort: lenient UTF-8 (replacement characters)
+                    var utf8 = new UTF8Encoding(false, false);
+                    var text = utf8.GetString(bytes);
+                    return SplitLines(text);
+                }
+            }
             catch { return Array.Empty<string>(); }
+        }
+
+        private static bool BytesEqual(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
+        {
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
+            return true;
+        }
+
+        private static string[] SplitLines(string text)
+        {
+            return text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
         }
 
         private void pbDrag_Paint(object sender, PaintEventArgs e)
@@ -235,13 +319,19 @@ namespace InputKunByAI
             var shouldRestoreTopMost = this.TopMost;
             try
             {
-                // change system cursor to crosshair during drag
-                SetGlobalCursorCrosshair();
+                // show overlay cursor during drag
+                StartOverlayCursor();
+                // hide the real system cursor globally
+                HideSystemCursor();
 
                 this.TopMost = true; // keep above until we hide
                 this.Hide();
 
                 await Task.Run(() => WaitForMouseUp());
+
+                // Drag ended: ensure overlay is gone before hit-testing target window
+                StopOverlayCursor();
+                ShowSystemCursor();
 
                 // Get cursor position and target window
                 if (!GetCursorPos(out POINT pt)) return;
@@ -269,13 +359,58 @@ namespace InputKunByAI
             }
             finally
             {
-                // restore cursors and window
-                RestoreSystemCursors();
+                // hide overlay and restore (safety)
+                StopOverlayCursor();
+                ShowSystemCursor();
 
                 this.Show();
                 this.Activate();
                 this.TopMost = shouldRestoreTopMost;
             }
+        }
+
+        private void StartOverlayCursor()
+        {
+            try
+            {
+                _dragOverlay ??= new CursorOverlay();
+                if (_dragOverlayTimer == null)
+                {
+                    _dragOverlayTimer = new System.Windows.Forms.Timer { Interval = 16 };
+                    _dragOverlayTimer.Tick += (_, __) =>
+                    {
+                        try
+                        {
+                            var pos = Cursor.Position;
+                            int pad = 5;
+                            int size = Math.Min(_dragOverlay!.Width, _dragOverlay!.Height);
+                            // place overlay so that its arrow tip (size-pad, pad) aligns with real cursor position
+                            var offsetX = size - pad;
+                            var offsetY = pad;
+                            _dragOverlay.Location = new System.Drawing.Point(pos.X - offsetX, pos.Y - offsetY);
+                            if (!_dragOverlay.Visible) _dragOverlay.Show();
+                            _dragOverlay.TopMost = true;
+                        }
+                        catch { }
+                    };
+                }
+                _dragOverlay.Show();
+                _dragOverlayTimer.Start();
+            }
+            catch { }
+        }
+
+        private void StopOverlayCursor()
+        {
+            try
+            {
+                _dragOverlayTimer?.Stop();
+                if (_dragOverlay != null)
+                {
+                    _dragOverlay.Hide();
+                }
+            }
+            catch { }
         }
 
         private static void WaitForMouseUp()
@@ -629,6 +764,9 @@ namespace InputKunByAI
         [DllImport("user32.dll")]
         private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
 
+        [DllImport("user32.dll")]
+        private static extern int ShowCursor(bool bShow);
+
         private const uint WM_CHAR = 0x0102;
         private const uint INPUT_KEYBOARD = 1;
         private const uint KEYEVENTF_KEYUP = 0x0002;
@@ -828,26 +966,14 @@ namespace InputKunByAI
             SendInput(2, new[] { down, up }, Marshal.SizeOf<INPUT>());
         }
 
-        private void SetGlobalCursorCrosshair()
+        private void HideSystemCursor()
         {
-            try
-            {
-                var hCur = LoadCursor(IntPtr.Zero, IDC_CROSS);
-                if (hCur != IntPtr.Zero)
-                {
-                    SetSystemCursor(hCur, OCR_NORMAL);
-                }
-            }
-            catch { }
+            try { while (ShowCursor(false) >= 0) { } } catch { }
         }
 
-        private void RestoreSystemCursors()
+        private void ShowSystemCursor()
         {
-            try
-            {
-                SystemParametersInfo(SPI_SETCURSORS, 0, IntPtr.Zero, 0);
-            }
-            catch { }
+            try { while (ShowCursor(true) < 0) { } } catch { }
         }
         #endregion
 
@@ -901,6 +1027,73 @@ namespace InputKunByAI
                 tlp.Controls.Add(SmallCombo3, 2, 0);
                 tlp.Controls.Add(StartText, 3, 0);
                 Container.Controls.Add(tlp);
+            }
+        }
+
+        // A small transparent, click-through, no-activate overlay showing a Sagittarius-like cursor
+        private sealed class CursorOverlay : Form
+        {
+            public CursorOverlay()
+            {
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.ShowInTaskbar = false;
+                this.StartPosition = FormStartPosition.Manual;
+                this.TopMost = true;
+                this.BackColor = System.Drawing.Color.Magenta; // transparency key color
+                this.TransparencyKey = System.Drawing.Color.Magenta;
+                this.Width = 32;
+                this.Height = 32;
+                this.Enabled = false; // do not receive focus/input
+            }
+
+            protected override CreateParams CreateParams
+            {
+                get
+                {
+                    const int WS_EX_TOOLWINDOW = 0x00000080;
+                    const int WS_EX_TRANSPARENT = 0x00000020;
+                    const int WS_EX_NOACTIVATE = 0x08000000;
+                    var cp = base.CreateParams;
+                    cp.ExStyle |= WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE;
+                    return cp;
+                }
+            }
+
+            protected override bool ShowWithoutActivation => true;
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                var g = e.Graphics;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                int size = Math.Min(this.Width, this.Height);
+                int pad = 5;
+                var start = new System.Drawing.PointF(pad, size - pad);
+                var end = new System.Drawing.PointF(size - pad, pad);
+
+                float dx = end.X - start.X;
+                float dy = end.Y - start.Y;
+                float len = (float)Math.Sqrt(dx * dx + dy * dy);
+                if (len < 1f) return;
+                var dir = new System.Drawing.PointF(dx / len, dy / len);
+                var perp = new System.Drawing.PointF(-dir.Y, dir.X);
+
+                using var pen = new System.Drawing.Pen(System.Drawing.Color.DodgerBlue, 2f);
+                // shaft
+                g.DrawLine(pen, start, end);
+                // arrowhead
+                float headLen = 8f;
+                float headWidth = 5f;
+                var a = new System.Drawing.PointF(end.X - dir.X * headLen + perp.X * headWidth, end.Y - dir.Y * headLen + perp.Y * headWidth);
+                var b = new System.Drawing.PointF(end.X - dir.X * headLen - perp.X * headWidth, end.Y - dir.Y * headLen - perp.Y * headWidth);
+                g.DrawLine(pen, end, a);
+                g.DrawLine(pen, end, b);
+                // crossbar
+                float crossDist = 12f;
+                float crossHalf = 6f;
+                var cp = new System.Drawing.PointF(start.X + dir.X * crossDist, start.Y + dir.Y * crossDist);
+                var c1 = new System.Drawing.PointF(cp.X - perp.X * crossHalf, cp.Y - perp.Y * crossHalf);
+                var c2 = new System.Drawing.PointF(cp.X + perp.X * crossHalf, cp.Y + perp.Y * crossHalf);
+                g.DrawLine(pen, c1, c2);
             }
         }
     }
