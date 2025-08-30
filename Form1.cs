@@ -1,4 +1,4 @@
-using System;
+Ôªøusing System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -22,6 +22,9 @@ namespace InputKunByAI
         private readonly string _orderNoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OrderNoCombo.txt");
         private readonly string _codeNoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeNoCombo.txt");
 
+        // Track last focused time textbox (ÈñãÂßã or ÁµÇ‰∫Ü)
+        private TextBox? _lastFocusedTimeTextBox;
+
         public Form1()
         {
             InitializeComponent();
@@ -36,6 +39,10 @@ namespace InputKunByAI
 
             BuildRows();
             LoadComboData();
+
+            // Hook drag-drop for end time and build the right-side time grid
+            HookTimeTextBox(txtEndTime);
+            BuildTimeGrid();
         }
 
         private void BuildRows()
@@ -48,6 +55,10 @@ namespace InputKunByAI
             {
                 var row = new PanelRow(i + 1, ctxTime);
                 row.BigCombo.SelectedIndexChanged += (s, e) => ApplyHistoryToRow(row);
+
+                // Allow drop and track focus on each ÈñãÂßã TextBox
+                HookTimeTextBox(row.StartText);
+
                 _rows.Add(row);
                 flpPanels.Controls.Add(row.Container);
             }
@@ -69,6 +80,11 @@ namespace InputKunByAI
             var historyItems = SafeReadAllLines(_historyPath);
             var bikouItems = SafeReadAllLines(_bikouPath);
 
+            // Pre-compute dropdown widths for ‰ΩúÊ•≠Áï™Âè∑/‰ΩúÊ•≠Âå∫ÂàÜ
+            var refFont = _rows.Count > 0 ? _rows[0].SmallCombo1.Font : this.Font;
+            int orderDropDownWidth = CalculateDropDownWidth(orderItems, refFont);
+            int codeDropDownWidth = CalculateDropDownWidth(codeItems, refFont);
+
             foreach (var row in _rows)
             {
                 row.BigCombo.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -79,7 +95,29 @@ namespace InputKunByAI
                 SetupEditableCombo(row.SmallCombo1, orderItems);
                 SetupEditableCombo(row.SmallCombo2, codeItems);
                 SetupEditableCombo(row.SmallCombo3, bikouItems);
+
+                // Enlarge dropdown only when opened (DropDownWidth)
+                row.SmallCombo1.DropDownWidth = Math.Max(row.SmallCombo1.Width, orderDropDownWidth);
+                row.SmallCombo2.DropDownWidth = Math.Max(row.SmallCombo2.Width, codeDropDownWidth);
             }
+        }
+
+        private static int CalculateDropDownWidth(string[] items, System.Drawing.Font font)
+        {
+            // Base width fallback
+            int max = 0;
+            if (items == null || items.Length == 0) return 0;
+
+            foreach (var s in items)
+            {
+                if (string.IsNullOrEmpty(s)) continue;
+                var size = TextRenderer.MeasureText(s, font);
+                if (size.Width > max) max = size.Width;
+            }
+
+            // add scrollbar width and a little padding
+            max += SystemInformation.VerticalScrollBarWidth + 16;
+            return max;
         }
 
         private static void SetupEditableCombo(ComboBox combo, string[] items)
@@ -114,17 +152,17 @@ namespace InputKunByAI
             if (!File.Exists(_orderNoPath))
             {
                 File.WriteAllText(_orderNoPath,
-                    "A000001ÅFçÏã∆A000001" + Environment.NewLine +
-                    "B000002ÅFçÏã∆B000002" + Environment.NewLine +
-                    "C000003ÅFçÏã∆C000003",
+                    "A000001Ôºö‰ΩúÊ•≠A000001" + Environment.NewLine +
+                    "B000002Ôºö‰ΩúÊ•≠B000002" + Environment.NewLine +
+                    "C000003Ôºö‰ΩúÊ•≠C000003",
                     Encoding.UTF8);
             }
             if (!File.Exists(_codeNoPath))
             {
                 File.WriteAllText(_codeNoPath,
-                    "020ÅFÉRÅ[Éh020" + Environment.NewLine +
-                    "031ÅFÉRÅ[Éh031" + Environment.NewLine +
-                    "032ÅFÉRÅ[Éh032",
+                    "020Ôºö„Ç≥„Éº„Éâ020" + Environment.NewLine +
+                    "031Ôºö„Ç≥„Éº„Éâ031" + Environment.NewLine +
+                    "032Ôºö„Ç≥„Éº„Éâ032",
                     Encoding.UTF8);
             }
 
@@ -151,13 +189,42 @@ namespace InputKunByAI
 
         private void pbDrag_Paint(object sender, PaintEventArgs e)
         {
-            // Draw simple target icon
+            // Sagittarius-like icon: diagonal arrow (‚Üó) with a small crossbar
             var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
             var r = pbDrag.ClientRectangle;
-            using var p = new System.Drawing.Pen(System.Drawing.Color.DodgerBlue, 2);
-            g.DrawEllipse(p, r.Left + 6, r.Top + 6, r.Width - 12, r.Height - 12);
-            g.DrawLine(p, r.Left + r.Width / 2, r.Top + 4, r.Left + r.Width / 2, r.Bottom - 4);
-            g.DrawLine(p, r.Left + 4, r.Top + r.Height / 2, r.Right - 4, r.Top + r.Height / 2);
+            int pad = 5;
+            var start = new System.Drawing.PointF(r.Left + pad, r.Bottom - pad);
+            var end = new System.Drawing.PointF(r.Right - pad, r.Top + pad);
+
+            float dx = end.X - start.X;
+            float dy = end.Y - start.Y;
+            float len = (float)Math.Sqrt(dx * dx + dy * dy);
+            if (len < 1f) return;
+            var dir = new System.Drawing.PointF(dx / len, dy / len);
+            var perp = new System.Drawing.PointF(-dir.Y, dir.X);
+
+            using var p = new System.Drawing.Pen(System.Drawing.Color.DodgerBlue, 2f);
+
+            // shaft
+            g.DrawLine(p, start, end);
+
+            // arrowhead
+            float headLen = 8f;
+            float headWidth = 5f;
+            var a = new System.Drawing.PointF(end.X - dir.X * headLen + perp.X * headWidth, end.Y - dir.Y * headLen + perp.Y * headWidth);
+            var b = new System.Drawing.PointF(end.X - dir.X * headLen - perp.X * headWidth, end.Y - dir.Y * headLen - perp.Y * headWidth);
+            g.DrawLine(p, end, a);
+            g.DrawLine(p, end, b);
+
+            // crossbar near the lower-left
+            float crossDist = 12f; // distance from start along the shaft
+            float crossHalf = 6f;   // half length of the crossbar
+            var cp = new System.Drawing.PointF(start.X + dir.X * crossDist, start.Y + dir.Y * crossDist);
+            var c1 = new System.Drawing.PointF(cp.X - perp.X * crossHalf, cp.Y - perp.Y * crossHalf);
+            var c2 = new System.Drawing.PointF(cp.X + perp.X * crossHalf, cp.Y + perp.Y * crossHalf);
+            g.DrawLine(p, c1, c2);
         }
 
         private async void pbDrag_MouseDown(object sender, MouseEventArgs e)
@@ -235,11 +302,13 @@ namespace InputKunByAI
             if (validRows.Count == 0)
             {
                 // No start times, just send end time
+                ClearFocusedEditField();
                 SendText(targetParent, endTime);
                 return;
             }
 
-            // 1) End time
+            // 1) End time (clear the first field before typing)
+            ClearFocusedEditField();
             SendText(targetParent, endTime);
             // 18 TABs
             SendTabs(targetParent, 18);
@@ -295,7 +364,7 @@ namespace InputKunByAI
 
         private void SendComboTexts(IntPtr targetParent, PanelRow row)
         {
-            // combo1 and combo2: send text before colon (both ASCII ':' and fullwidth 'ÅF')
+            // combo1 and combo2: send text before colon (both ASCII ':' and fullwidth 'Ôºö')
             var c1 = row.SmallCombo1.Text ?? string.Empty;
             var c2 = row.SmallCombo2.Text ?? string.Empty;
             var c3 = row.SmallCombo3.Text ?? string.Empty;
@@ -312,7 +381,7 @@ namespace InputKunByAI
         private static string TakeBeforeColon(string s)
         {
             if (string.IsNullOrEmpty(s)) return s;
-            int idx = s.IndexOf('ÅF');
+            int idx = s.IndexOf('Ôºö');
             if (idx < 0) idx = s.IndexOf(':');
             return idx >= 0 ? s[..idx] : s;
         }
@@ -364,6 +433,116 @@ namespace InputKunByAI
                 Debug.WriteLine(ex);
             }
         }
+
+        #region Time grid (right panel) and drag/drop helpers
+        private void BuildTimeGrid()
+        {
+            if (tlpTimeGrid == null) return;
+
+            tlpTimeGrid.SuspendLayout();
+            tlpTimeGrid.Controls.Clear();
+            tlpTimeGrid.RowStyles.Clear();
+            tlpTimeGrid.RowCount = 16; // 08:00 - 23:45
+
+            for (int r = 0; r < tlpTimeGrid.RowCount; r++)
+            {
+                tlpTimeGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 28f));
+            }
+
+            int hourStart = 8; // 08:00
+            for (int row = 0; row < 16; row++)
+            {
+                int hour = hourStart + row;
+                for (int col = 0; col < 4; col++)
+                {
+                    int min = col * 15;
+                    string time = $"{hour:D2}:{min:D2}";
+                    var btn = CreateTimeButton(time);
+                    tlpTimeGrid.Controls.Add(btn, col, row);
+                }
+            }
+
+            tlpTimeGrid.ResumeLayout(true);
+        }
+
+        private Button CreateTimeButton(string time)
+        {
+            var btn = new Button
+            {
+                Text = time,
+                Tag = time,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(2),
+                UseMnemonic = false,
+                TabStop = false,
+            };
+            btn.Click += OnTimeButtonClick;
+            btn.MouseDown += OnTimeButtonMouseDown;
+            return btn;
+        }
+
+        private void OnTimeButtonClick(object? sender, EventArgs e)
+        {
+            if (sender is Button b && b.Tag is string s)
+            {
+                var target = _lastFocusedTimeTextBox ?? txtEndTime;
+                if (target != null && !target.IsDisposed)
+                {
+                    target.Text = s;
+                    target.Focus();
+                    target.SelectionStart = target.TextLength;
+                }
+            }
+        }
+
+        private void OnTimeButtonMouseDown(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left) return;
+            if (sender is Button b && b.Tag is string s)
+            {
+                b.DoDragDrop(s, DragDropEffects.Copy);
+            }
+        }
+
+        private void HookTimeTextBox(TextBox tb)
+        {
+            if (tb == null) return;
+            tb.AllowDrop = true;
+            tb.Enter += (_, __) => _lastFocusedTimeTextBox = tb;
+            tb.Click += (_, __) => _lastFocusedTimeTextBox = tb;
+            tb.DragEnter += OnTimeDragEnter;
+            tb.DragDrop += OnTimeDragDrop;
+        }
+
+        private void OnTimeDragEnter(object? sender, DragEventArgs e)
+        {
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.UnicodeText))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+            else if (e.Data != null && e.Data.GetDataPresent(DataFormats.Text))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void OnTimeDragDrop(object? sender, DragEventArgs e)
+        {
+            if (sender is not TextBox tb) return;
+            string? text = e.Data?.GetData(DataFormats.UnicodeText) as string
+                          ?? e.Data?.GetData(DataFormats.Text) as string;
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                tb.Text = text.Trim();
+                tb.Focus();
+                tb.SelectionStart = tb.TextLength;
+            }
+        }
+        #endregion
 
         #region Context menu for time selection
         private void ctxTime_Opening(object sender, CancelEventArgs e)
@@ -460,6 +639,13 @@ namespace InputKunByAI
         private const uint OCR_NORMAL = 32512; // arrow
         private const int IDC_CROSS = 32515;
         private const uint SPI_SETCURSORS = 0x0057;
+        private const ushort VK_CONTROL = 0x11;
+        private const ushort VK_SHIFT = 0x10;
+        private const ushort VK_HOME = 0x24;
+        private const ushort VK_END = 0x23;
+        private const ushort VK_DELETE = 0x2E;
+        private const ushort VK_BACK = 0x08;
+        private const ushort VK_A = 0x41;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT { public int X; public int Y; }
@@ -553,6 +739,46 @@ namespace InputKunByAI
             for (int i = 0; i < count; i++) SendTab(target);
         }
 
+        private void SendKey(ushort vk)
+        {
+            var down = new INPUT { type = INPUT_KEYBOARD, U = new INPUTUNION { ki = new KEYBDINPUT { wVk = vk, dwFlags = 0 } } };
+            var up = new INPUT { type = INPUT_KEYBOARD, U = new INPUTUNION { ki = new KEYBDINPUT { wVk = vk, dwFlags = KEYEVENTF_KEYUP } } };
+            SendInput(2, new[] { down, up }, Marshal.SizeOf<INPUT>());
+            Thread.Sleep(2);
+        }
+
+        private void SendKeyDown(ushort vk)
+        {
+            var down = new INPUT { type = INPUT_KEYBOARD, U = new INPUTUNION { ki = new KEYBDINPUT { wVk = vk, dwFlags = 0 } } };
+            SendInput(1, new[] { down }, Marshal.SizeOf<INPUT>());
+        }
+
+        private void SendKeyUp(ushort vk)
+        {
+            var up = new INPUT { type = INPUT_KEYBOARD, U = new INPUTUNION { ki = new KEYBDINPUT { wVk = vk, dwFlags = KEYEVENTF_KEYUP } } };
+            SendInput(1, new[] { up }, Marshal.SizeOf<INPUT>());
+        }
+
+        private void SendKeyRepeat(ushort vk, int count)
+        {
+            for (int i = 0; i < count; i++) SendKey(vk);
+        }
+
+        private void ClearFocusedEditField()
+        {
+            try
+            {
+                // Preferred: Ctrl+A then Delete
+                SendKeyDown(VK_CONTROL);
+                SendKey(VK_A);
+                SendKeyUp(VK_CONTROL);
+                Thread.Sleep(10);
+                SendKey(VK_DELETE);
+                Thread.Sleep(10);
+            }
+            catch { }
+        }
+
         private IntPtr GetFocusedHandleForWindow(IntPtr hwndCandidate)
         {
             try
@@ -638,28 +864,28 @@ namespace InputKunByAI
             {
                 Container = new Panel
                 {
-                    Width = 720,
+                    Width = 670,
                     Height = 58,
                     Margin = new Padding(2),
                     BorderStyle = BorderStyle.FixedSingle,
                     Padding = new Padding(3)
                 };
 
-                BigCombo = new ComboBox { Left = 3, Top = 3, Width = 710, Height = 24, DropDownStyle = ComboBoxStyle.DropDownList, IntegralHeight = false };
+                BigCombo = new ComboBox { Left = 3, Top = 3, Width = 660, Height = 24, DropDownStyle = ComboBoxStyle.DropDownList, IntegralHeight = false };
                 Container.Controls.Add(BigCombo);
 
                 var tlp = new TableLayoutPanel
                 {
                     Left = 3,
                     Top = 29,
-                    Width = 710,
+                    Width = 660,
                     Height = 24,
                     ColumnCount = 4,
                     RowCount = 1,
                     Margin = new Padding(0),
                     Padding = new Padding(0)
                 };
-                // çÏã∆î‘çÜ 30%, çÏã∆ãÊï™ 15%, îıçl 40%, äJén 15%
+                // ‰ΩúÊ•≠Áï™Âè∑ 30%, ‰ΩúÊ•≠Âå∫ÂàÜ 15%, ÂÇôËÄÉ 40%, ÈñãÂßã 15%
                 tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
                 tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
                 tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));

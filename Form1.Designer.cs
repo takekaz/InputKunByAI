@@ -16,6 +16,11 @@
         private System.Windows.Forms.Label lblHeaderBikou;
         private System.Windows.Forms.Label lblHeaderStart;
         private System.Windows.Forms.ContextMenuStrip ctxTime;
+        
+        // Added: time grid panel and table
+        private System.Windows.Forms.Panel pnlTimeGrid;
+        private System.Windows.Forms.Label lblTimeGridHeader;
+        private System.Windows.Forms.TableLayoutPanel tlpTimeGrid;
 
         /// <summary>
         ///  Clean up any resources being used.
@@ -48,7 +53,11 @@
             this.lblHeaderBikou = new System.Windows.Forms.Label();
             this.lblHeaderStart = new System.Windows.Forms.Label();
             this.ctxTime = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.pnlTimeGrid = new System.Windows.Forms.Panel();
+            this.tlpTimeGrid = new System.Windows.Forms.TableLayoutPanel();
+            this.lblTimeGridHeader = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pbDrag)).BeginInit();
+            this.pnlTimeGrid.SuspendLayout();
             this.SuspendLayout();
             // 
             // pbDrag
@@ -119,14 +128,12 @@
             // flpPanels
             // 
             this.flpPanels.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)))
-            ;
+            | System.Windows.Forms.AnchorStyles.Left))));
             this.flpPanels.AutoScroll = true;
             this.flpPanels.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flpPanels.Location = new System.Drawing.Point(12, 84);
             this.flpPanels.Name = "flpPanels";
-            this.flpPanels.Size = new System.Drawing.Size(760, 660);
+            this.flpPanels.Size = new System.Drawing.Size(682, 660);
             this.flpPanels.TabIndex = 7;
             this.flpPanels.WrapContents = false;
             // 
@@ -136,11 +143,78 @@
             this.ctxTime.Size = new System.Drawing.Size(61, 4);
             this.ctxTime.Opening += new System.ComponentModel.CancelEventHandler(this.ctxTime_Opening);
             // 
+            // pnlTimeGrid
+            // 
+            this.pnlTimeGrid.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.pnlTimeGrid.AutoScroll = true;
+            this.pnlTimeGrid.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pnlTimeGrid.Controls.Add(this.tlpTimeGrid);
+            this.pnlTimeGrid.Controls.Add(this.lblTimeGridHeader);
+            this.pnlTimeGrid.Location = new System.Drawing.Point(700, 84);
+            this.pnlTimeGrid.Name = "pnlTimeGrid";
+            this.pnlTimeGrid.Size = new System.Drawing.Size(188, 540);
+            this.pnlTimeGrid.TabIndex = 8;
+            // 
+            // tlpTimeGrid
+            // 
+            this.tlpTimeGrid.AutoSize = true;
+            this.tlpTimeGrid.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlpTimeGrid.ColumnCount = 4;
+            this.tlpTimeGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tlpTimeGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tlpTimeGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tlpTimeGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tlpTimeGrid.Dock = System.Windows.Forms.DockStyle.Top;
+            this.tlpTimeGrid.Location = new System.Drawing.Point(0, 24);
+            this.tlpTimeGrid.Name = "tlpTimeGrid";
+            this.tlpTimeGrid.RowCount = 24;
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpTimeGrid.TabIndex = 1;
+            // 
+            // lblTimeGridHeader
+            // 
+            this.lblTimeGridHeader.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblTimeGridHeader.Location = new System.Drawing.Point(0, 0);
+            this.lblTimeGridHeader.Name = "lblTimeGridHeader";
+            this.lblTimeGridHeader.Size = new System.Drawing.Size(186, 24);
+            this.lblTimeGridHeader.TabIndex = 0;
+            this.lblTimeGridHeader.Text = "時刻ピッカー (クリック/ドラッグ)";
+            this.lblTimeGridHeader.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(784, 720);
+            this.ClientSize = new System.Drawing.Size(900, 720);
+            this.Controls.Add(this.pnlTimeGrid);
             this.Controls.Add(this.flpPanels);
             this.Controls.Add(this.lblHeaderStart);
             this.Controls.Add(this.lblHeaderBikou);
@@ -149,11 +223,13 @@
             this.Controls.Add(this.lblEndTime);
             this.Controls.Add(this.txtEndTime);
             this.Controls.Add(this.pbDrag);
-            this.MinimumSize = new System.Drawing.Size(800, 500);
+            this.MinimumSize = new System.Drawing.Size(900, 500);
             this.Name = "Form1";
             this.Text = "InputKunByAI";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbDrag)).EndInit();
+            this.pnlTimeGrid.ResumeLayout(false);
+            this.pnlTimeGrid.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
         }

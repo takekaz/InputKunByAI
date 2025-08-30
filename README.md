@@ -1,120 +1,130 @@
-# InputKunByAI
+﻿# InputKunByAI
 
-Windows�����̓��͎x���c�[���ł��BSpy++�́u�^�[�Q�b�g���h���b�O���ăE�B���h�E����肷��v�@�\�𗬗p���g�����A�u���E�U�Ȃǂ̑��A�v���ɑ΂��āA���炩���ߐݒ肵���e�L�X�g��TAB�L�[������������M���܂��B
+Windows向けの入力支援ツールです。Spy++の「ターゲットをドラッグしてウィンドウを特定する」機能を流用しつつ拡張し、ブラウザなどの他アプリに対して、あらかじめ設定したテキストとTABキー操作を自動送信します。
 
-��ȓ���
-- �h���b�O�^�[�Q�b�g: ��ʍ���̃A�C�R�����h���b�O���A�u���E�U�Ȃǂ̑ΏۃA�v����Ń}�E�X�{�^���𗣂��ƁA���̍��W�̃R���g���[���̐e�E�B���h�E�ɑ΂��ē��͂𑗐M
-- ���̓��C�A�E�g: �I�������e�L�X�g�{�b�N�X��10�̃p�l���i�e�p�l����1�s�ڂɑ傫���R���{�A2�s�ڂɏ��R���{�~3�{�J�n�����e�L�X�g�j
-- ���M�����̎�������: �I������ �� TAB�~18 �� �p�l��1�̏��R���{�Q �� �p�l��1�J�n���� �� TAB�~2 �� �ȍ~�̃p�l���c �Ƃ������Ŏ������M
-- �R���{�f�[�^�̊O���t�@�C����: 4�̃e�L�X�g�t�@�C���ŃR���{�̓��e���Ǘ��i�����E���l�̓h���b�O���ɍX�V�j
-- �����R���e�L�X�g���j���[: �I�������E�J�n�����e�L�X�g���E�N���b�N�����15�����݂̎������j���[��\��
-- ���M����: Windows API SendInput �ɂ�� UNICODE �o�H�ł̕������M�i�u���b�N����ɂ��������̃A�v���ň��蓮��j
-- �h���b�O����UI: ���C����ʂ͕s�������A�V�X�e���J�[�\�����\���ɕύX�i�I����ɕ����j
+主な特徴
+- ドラッグターゲット: 画面左上のアイコンをドラッグし、ブラウザなどの対象アプリ上でマウスボタンを離すと、その座標のコントロールの親ウィンドウに対して入力を送信
+- 入力レイアウト: 終了時刻テキストボックスと10個のパネル（各パネルは1行目に大きいコンボ、2行目に小コンボ×3＋開始時刻テキスト）
+- 送信順序の自動制御: 終了時刻 → TAB×18 → パネル1の小コンボ群 → パネル1開始時刻 → TAB×2 → 以降のパネル… という順で自動送信
+- コンボデータの外部ファイル化: 4つのテキストファイルでコンボの内容を管理（履歴・備考はドラッグ毎に更新）
+- 時刻UI: 右クリックの時刻コンテキストメニューに加え、画面右側に15分刻みの時刻ピッカー（16行×4列, 08:00〜23:45）を表示。クリックで直近フォーカスの時刻テキストへ設定、ドラッグ&ドロップで開始/終了テキストボックスへ投入可能
+- 送信方式: Windows API SendInput による UNICODE 経路での文字送信（ブロックされにくく多くのアプリで安定動作）
+- ドラッグ中のUI: メイン画面は不可視化し、システムカーソルを十字に変更（終了後に復元）
+- コンボのドロップダウン幅: 作業番号・作業区分は起動/更新時にリストの最長文字幅を計測し、開いたときのドロップダウン幅だけ自動拡張
+- アイコン: 左上のドラッグ用アイコンは「射手座」風の斜め矢印に変更
 
-�����
+動作環境
 - OS: Windows 10/11
 - .NET SDK: .NET 8
-- ����d�l: C# 12
-- �t���[�����[�N: Windows Forms
+- 言語仕様: C# 12
+- フレームワーク: Windows Forms
 
-�r���h�E���s
-1. .NET 8 SDK ���C���X�g�[��
-2. �{���|�W�g�����N���[���܂��͓W�J
-3. Visual Studio 2022 �ȍ~�� InputKunByAI.csproj ���J��
-4. �\�����[�V�����\���� Debug/Release ����I�����A�r���h
-5. ���s�iF5�܂���Ctrl+F5�j
+ビルド・実行
+1. .NET 8 SDK をインストール
+2. 本リポジトリをクローンまたは展開
+3. Visual Studio 2022 以降で InputKunByAI.csproj を開く
+4. ソリューション構成を Debug/Release から選択し、ビルド
+5. 実行（F5またはCtrl+F5）
 
-UI�\��
-- ��ʏ㕔
-  - �h���b�O�p�A�C�R���iPictureBox�j
-  - �I�������e�L�X�g�i�����l 17:30�j
-  - ���o�����x��: �u��Ɣԍ��v�u��Ƌ敪�v�u���l�v�u��Ǝ���(�J�n)�v
-- �p�l���i10�EFlowLayoutPanel���ɏc���сj
-  - 1�s��: �傫���R���{�i�����A���R���͕s�j
-  - 2�s��: ���R���{�~3�i���R���͉j�{�J�n�����e�L�X�g�i�E�N���b�N�Ŏ������j���[�j
-  - �p�l��1�̊J�n���������l: 08:30
+UI構成
+- 画面上部
+  - ドラッグ用アイコン（PictureBox, 射手座風アイコン）
+  - 終了時刻テキスト（初期値 17:30）
+  - 見出しラベル: 「作業番号」「作業区分」「備考」「作業時刻(開始)」
+- パネル（10個・FlowLayoutPanel内に縦並び）
+  - 1行目: 大きいコンボ（履歴、自由入力不可）
+  - 2行目: 小コンボ×3（自由入力可）＋開始時刻テキスト（右クリックで時刻メニュー／右側ピッカーからクリック/ドラッグ可能）
+  - パネル1の開始時刻初期値: 08:30
+- 右側パネル
+  - 時刻ピッカー（16行×4列, 08:00〜23:45）
+  - クリック: 最後にフォーカスした時刻テキストへ反映
+  - ドラッグ&ドロップ: ボタンをドラッグし、開始/終了のテキストボックスへドロップで反映
 
-�R���{�{�b�N�X�ƃf�[�^�t�@�C��
-- ���ׂẴp�l���ɓ���̃A�C�e���Z�b�g��ǂݍ��݂܂��B
-- �t�@�C���̏ꏊ: ���s�t�@�C���Ɠ����t�H���_
-  - HistoryCombo.txt�i����: �p�l���̏��R���{3��TAB��؂�ŕۑ��^�h���b�O���ɐ擪�ցA�d�������A�ő�500�s�j
-  - BikouCombo.txt�i���l: ���R���{3�̓��͂�擪�ցA�d�������A�ő�500�s�j
-  - OrderNoCombo.txt�i��Ɣԍ�: ���[�U�[�Ǘ��j
-  - CodeNoCombo.txt�i��Ƌ敪: ���[�U�[�Ǘ��j
-- ����N�����̎�������
-  - HistoryCombo.txt, BikouCombo.txt ��������΋�t�@�C�����쐬�i500�s����Ƀg�����j
-  - OrderNoCombo.txt ��������Έȉ��ō쐬
-    - A000001�F���A000001
-    - B000002�F���B000002
-    - C000003�F���C000003
-  - CodeNoCombo.txt ��������Έȉ��ō쐬
-    - 020�F�R�[�h020
-    - 031�F�R�[�h031
-    - 032�F�R�[�h032
+コンボボックスとデータファイル
+- すべてのパネルに同一のアイテムセットを読み込みます。
+- ファイルの場所: 実行ファイルと同じフォルダ
+  - HistoryCombo.txt（履歴: パネルの小コンボ3つをTAB区切りで保存／ドラッグ毎に先頭へ、重複除去、最大500行）
+  - BikouCombo.txt（備考: 小コンボ3の入力を先頭へ、重複除去、最大500行）
+  - OrderNoCombo.txt（作業番号: ユーザー管理）
+  - CodeNoCombo.txt（作業区分: ユーザー管理）
+- 初回起動時の自動生成
+  - HistoryCombo.txt, BikouCombo.txt が無ければ空ファイルを作成（500行上限にトリム）
+  - OrderNoCombo.txt が無ければ以下で作成
+    - A000001：作業A000001
+    - B000002：作業B000002
+    - C000003：作業C000003
+  - CodeNoCombo.txt が無ければ以下で作成
+    - 020：コード020
+    - 031：コード031
+    - 032：コード032
 
-���M�d�l�i�T�v�j
-- ���M��: �h���b�v���W�̎q�E�B���h�E���擾���A���̐e�E�B���h�E��ΏۂƂ��ăt�H�[�J�X��^���A���N���b�N�Ŋm�肵����ɑ��M���J�n
-- �������M: SendInput�iKEYEVENTF_UNICODE�j��1���������M
-- TAB���M: SendInput��TAB�L�[�i����������j
-- �h���b�O��: ���C���t�H�[���͔�\���A�J�[�\���͏\���ɕύX�i�I����ɕ����j
+送信仕様（概要）
+- 送信先: ドロップ座標の子ウィンドウを取得し、その親ウィンドウを対象としてフォーカスを与え、左クリックで確定した後に送信を開始
+- 文字送信: SendInput（KEYEVENTF_UNICODE）で1文字ずつ送信
+- TAB送信: SendInputでTABキー（押下→離上）
+- 初回の編集欄クリア: 最初の送信前に対象の編集欄をクリア（Ctrl+A→Delete）
+- ドラッグ中: メインフォームは非表示、カーソルは十字に変更（終了後に復元）
 
-���M�����i�ڍׁj
-- �I�������𑗐M
-- TAB��18�񑗐M
-- �p�l��1�i2�s�ځj
-  - ���R���{1�̕������u: �܂��� �F �̑O�܂Łv���M �� TAB
-  - ���R���{2�̕������u: �܂��� �F �̑O�܂Łv���M �� TAB
-  - ���R���{3�̕����𑗐M
-  - TAB�ŊJ�n�����ֈړ�
-  - �J�n�����𑗐M �� TAB�~2
-- �p�l��2�ȍ~
-  - �J�n�����𑗐M �� TAB�~2
-  - ���R���{1 �� TAB �� ���R���{2 �� TAB �� ���R���{3
-  - TAB�ŊJ�n�����֖߂�
-  - �J�n�����𑗐M �� TAB�~2
-- �I������
-  - �ŏ��ɊJ�n��������̃p�l�������o�������_�ŁA����ȍ~�̃p�l���͏������Ȃ�
-  - ���̃p�l���̊J�n��������̏ꍇ�́A����ɏI�������𑗐M���ď������I��
-  - 10�p�l���ڂ̌�͎��p�l���������̂ŁA����ɏI�������𑗐M
+送信順序（詳細）
+- 終了時刻を送信（送信前に編集欄をクリア）
+- TABを18回送信
+- パネル1（2行目）
+  - 小コンボ1の文字を「: または ： の前まで」送信 → TAB
+  - 小コンボ2の文字を「: または ： の前まで」送信 → TAB
+  - 小コンボ3の文字を送信
+  - TABで開始時刻へ移動
+  - 開始時刻を送信 → TAB×2
+- パネル2以降
+  - 開始時刻を送信 → TAB×2
+  - 小コンボ1 → TAB → 小コンボ2 → TAB → 小コンボ3
+  - TABで開始時刻へ戻る
+  - 開始時刻を送信 → TAB×2
+- 終了条件
+  - 最初に開始時刻が空のパネルを検出した時点で、それ以降のパネルは処理しない
+  - 次のパネルの開始時刻が空の場合は、代わりに終了時刻を送信して処理を終了
+  - 10パネル目の後は次パネルが無いので、代わりに終了時刻を送信
 
-�g�p���@
-1. �K�v�ȃR���{��J�n�����A�I����������ʂŐݒ�
-2. �I��������J�n�����̃e�L�X�g�{�b�N�X���E�N���b�N����ƁA15�����݂̎������j���[����I���\
-3. ����̃^�[�Q�b�g�A�C�R�����u���E�U�iEdge�Ȃǁj�փh���b�O
-4. ���͑Ώۂ̃R���g���[����Ń}�E�X�{�^���𗣂��ƁA�Ώېe�E�B���h�E�Ƀt�H�[�J�X�ƃN���b�N���s���A�������͂��J�n
-5. ���͊�����A�����iHistoryCombo.txt �� BikouCombo.txt�j���X�V����܂��i�d�������E�擪�ǉ��E�ő�500�s�j
+使用方法
+1. 必要なコンボや開始時刻、終了時刻を画面で設定
+2. 終了時刻や開始時刻のテキストボックスを右クリックすると、15分刻みの時刻メニューから選択可能
+3. 右側の時刻ピッカーをクリックして直近フォーカスの時刻テキストへ設定、またはボタンをドラッグ&ドロップして対象欄へ投入
+4. 左上のターゲットアイコンをブラウザ（Edgeなど）へドラッグ
+5. 入力対象のコントロール上でマウスボタンを離すと、対象親ウィンドウにフォーカスとクリックを行い、自動入力が開始
+6. 入力完了後、履歴（HistoryCombo.txt と BikouCombo.txt）が更新されます（重複除去・先頭追加・最大500行）
 
-���ӎ����E���m�̐���
-- �{�c�[����Windows API�ŃL�[�{�[�h���͂��������܂��B�Ǘ��Ҍ������K�v�ȃA�v���ɂ͊Ǘ��҂ł̎��s���K�v�ȏꍇ������܂��B
-- �u���E�U��Web�A�v�����̃t�H�[�J�X����͐���ɂ��ATAB�񐔂�ҋ@���ԁiSleep�j�����ɉ����Ĕ��������K�v�ȏꍇ������܂��B
-- ���͑Ώۂ�IME��J�X�^���G�f�B�^�A�R���e���c�Z�L�����e�B�Ő��䂳��Ă���ꍇ�A���͂���荞�܂�Ȃ��\��������܂��B
-- �h���b�O���̓V�X�e���J�[�\�����\���ɕύX���܂��B�����I�����Ɋ���֕������܂����A�ُ�I�����͕�������Ȃ��\�������邽�߁A���̏ꍇ��OS�����O�I�t/�ċN�����Ċ���ɖ߂��Ă��������B
-- �{�c�[����Windows��p�ł��B
+注意事項・既知の制限
+- 本ツールはWindows APIでキーボード入力を合成します。管理者権限が必要なアプリには管理者での実行が必要な場合があります。
+- ブラウザやWebアプリ側のフォーカスや入力制御により、TAB回数や待機時間（Sleep）を環境に応じて微調整が必要な場合があります。
+- 入力対象がIMEやカスタムエディタ、コンテンツセキュリティで制御されている場合、入力が取り込まれない可能性があります。
+- ドラッグ中はシステムカーソルを十字に変更します。処理終了時に既定へ復元しますが、異常終了時は復元されない可能性があるため、その場合はOSをログオフ/再起動して既定に戻してください。
+- 本ツールはWindows専用です。
 
-�����̗v�_�i�J���Ҍ����j
-- �t�H�[��: Form1
-  - �h���b�O����: pbDrag_MouseDown
-  - �������j���[�\�z: ctxTime_Opening
-  - �p�l������: BuildRows�iFlowLayoutPanel��10�p�l�����I�ǉ��j
-  - �N�����t�@�C���쐬/�g����: EnsureDataFiles
-  - �����X�V: UpdateHistoryFiles
-  - ���͑��M�i�V�[�P���X�j: ExecuteSendSequence
-  - �������M�iUNICODE�j: SendText / SendUnicodeChar�iSendInput�j
-- �O���t�@�C���̏���s: �N������500�s�փg����
-- UI�œK��: �p�l���g���A�c�����̗]�����ŏ����A��Ƌ敪�R���{���𔼕������ɒ���
+実装の要点（開発者向け）
+- フォーム: Form1
+  - ドラッグ処理: pbDrag_MouseDown
+  - 時刻メニュー構築: ctxTime_Opening
+  - 時刻ピッカー: BuildTimeGrid（右側パネルへ16×4のボタンを生成、クリック/ドラッグ対応）
+  - パネル生成: BuildRows（FlowLayoutPanelへ10パネル動的追加）
+  - 起動時ファイル作成/トリム: EnsureDataFiles
+  - 履歴更新: UpdateHistoryFiles
+  - 入力送信（シーケンス）: ExecuteSendSequence（最初の送信前に ClearFocusedEditField で編集欄をクリア）
+  - 文字送信（UNICODE）: SendText / SendUnicodeChar（SendInput）
+  - ドロップダウン幅計算: LoadComboData 内で TextRenderer.MeasureText を用いて DropDownWidth を設定
+- 外部ファイルの上限行: 起動時に500行へトリム
+- UI最適化: パネル枠線、縦方向の余白を最小化、作業区分コンボ幅を半分相当に調整、右側の時刻ピッカーで時刻選択を高速化
 
-�g���u���V���[�e�B���O
-- ���͂�����Ȃ�
-  - �ΏۃA�v���Ƀt�H�[�J�X���������Ă��邩�m�F�i�h���b�O���1�N���b�N���������M���Ă��܂��j
-  - �Ǘ��Ҍ����A�v���֓��͂���ꍇ�A�A�v�����̂��Ǘ��҂Ƃ��ċN��
-  - TAB�񐔂�Sleep�𒲐��iExecuteSendSequence���̒l�j
-- ��������
-  - �{������UNICODE�o�R�ő��M���܂��B�Ώۑ�������ȃL�[�������s���Ă���ꍇ�A�u���E�U�g��/�y�[�W�X�N���v�g�̉e�����m�F
-- �p�l����1�����\������Ȃ�
-  - FlowLayoutPanel.ResumeLayout/PerformLayout�����s�ς݂ł��B�E�B���h�E�T�C�Y���L���邩�X�N���[�������m�F��������
+トラブルシューティング
+- 入力が入らない
+  - 対象アプリにフォーカスが当たっているか確認（ドラッグ後に1クリックを自動送信しています）
+  - 管理者権限アプリへ入力する場合、アプリ自体を管理者として起動
+  - TAB回数やSleepを調整（ExecuteSendSequence内の値）
+- 文字化け
+  - 本実装はUNICODE経由で送信します。対象側が特殊なキー処理を行っている場合、ブラウザ拡張/ページスクリプトの影響を確認
+- パネルが1つしか表示されない
+  - FlowLayoutPanel.ResumeLayout/PerformLayoutを実行済みです。ウィンドウサイズを広げるかスクロールをご確認ください
 
-���C�Z���X
-- �L�ڂ������ꍇ�͎Г����p�O��A�O���z�z���͕K�v�ɉ����ă��C�Z���X�𖾋L���Ă��������B
+ライセンス
+- 記載が無い場合は社内利用前提、外部配布時は必要に応じてライセンスを明記してください。
 
-�Ɛӎ���
-- �{�c�[���̎g�p�ɂ�蔭�����������Ȃ鑹�Q�ɂ��Ă���҂͐ӔC�𕉂��܂���B���p�͎��ȐӔC�ł��肢���܂��B
+免責事項
+- 本ツールの使用により発生したいかなる損害についても作者は責任を負いません。利用は自己責任でお願いします。
